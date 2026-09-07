@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express, { json } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -7,8 +6,6 @@ import authRoutes from './routes/authRoutes.js';
 import bookRoutes from './routes/bookRoutes.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
 import errorHandler from './middleware/errorHandler.js';
-
-const DEFAULT_PORT = 4000;
 
 const app = express();
 
@@ -37,5 +34,4 @@ app.get('/admin/ping', requireAuth, requireRole('ADMIN'), (req, res) => {
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || DEFAULT_PORT;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+export default app;

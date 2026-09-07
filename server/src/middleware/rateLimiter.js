@@ -8,6 +8,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many attempts, please try again later' },
+  skip: () => process.env.NODE_ENV === 'test',
 });
 
 export default authLimiter;

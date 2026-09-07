@@ -4,11 +4,12 @@
   "description": "",
   "main": "src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/app.js",
-    "start": "node src/app.js",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test:db:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
+    "test": "dotenv -e .env.test -- vitest run"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,8 @@
     "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
     "zod": "^4.5.4"
   },
   "allowScripts": {
@@ -35,7 +38,11 @@
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "dotenv-cli": "^11.0.0",
     "nodemon": "^3.1.4",
-    "prisma": "^7.10.0"
+    "prisma": "^7.10.0",
+    "supertest": "^7.2.2",
+    "vitest": "^5.0.0"
   }
 }
