@@ -37,6 +37,7 @@
     "@prisma/engines@7.10.0": true
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "dotenv-cli": "^11.0.0",
