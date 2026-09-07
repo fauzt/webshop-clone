@@ -1,0 +1,9 @@
+.env
+
+node_modules/
+compose.yaml
+
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
