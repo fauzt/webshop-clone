@@ -1,4 +1,4 @@
-import prisma from '../config/db.js';
+import prisma from '../config/db.ts';
 import {
   addToCartSchema, updateCartItemSchema
 } from '../utils/cartValidation.js';

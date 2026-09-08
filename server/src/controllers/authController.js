@@ -1,5 +1,5 @@
 import { hash, compare } from 'bcrypt';
-import prisma from '../config/db.js';
+import prisma from '../config/db.ts';
 import { registerSchema, loginSchema } from '../utils/validation.js';
 import { signAccessToken, generateRefreshToken, refreshTokenExpiry, REFRESH_TOKEN_TTL_DAYS } from '../utils/tokens.js';
 

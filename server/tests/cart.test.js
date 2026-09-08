@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../src/app.js';
-import prisma from '../src/config/db.js';
+import prisma from '../src/config/db.ts';
 
 async function createUserAndGetToken(email) {
   const res = await request(app)
