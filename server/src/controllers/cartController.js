@@ -16,7 +16,7 @@ function serializeCart(cartItems) {
   return { items, total };
 }
 
-export async function getCart(req, res, next) {
+async function getCart(req, res, next) {
   try {
     const cartItems = await prisma.cartItem.findMany({
       where: { userId: req.user.id },
@@ -67,7 +67,7 @@ async function addToCart(req, res, next) {
         });
     
         res.status(201).json({ item: cartItem });
-    } catch (error) {
+    } catch (err) {
         next(err)
     }
 }

@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes.js';
 import bookRoutes from './routes/bookRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -20,6 +21,7 @@ app.use(cookieParser());
 
 app.use('/auth', authRoutes);
 app.use('/books', bookRoutes);
+app.use('/cart', cartRoutes);
 
 // Example of a protected route — replace with your real book routes later.
 // GET /me returns the logged-in user's identity from the access token.
