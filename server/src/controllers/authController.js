@@ -15,7 +15,7 @@ function refreshCookieOptions() {
     sameSite: 'strict',
     secure: process.env.NODE_ENV === 'production',
     path: '/auth/refresh', // scope the cookie to the refresh endpoint only
-    maxAge: REFRESH_TOKEN_TTL_DAYS,
+    maxAge: REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000, //ms
   };
 }
 

@@ -1,7 +1,14 @@
 import request from 'supertest';
 import app from '../src/app.js';
+import { REFRESH_TOKEN_TTL_DAYS } from '../src/utils/tokens';
 
 const validUser = { email: 'reader@example.com', password: 'correcthorse123' };
+
+// e.g. "refreshToken=abc; Max-Age=2592000; Path=...".
+function parseMaxAge(cookieHeader) {
+  const match = cookieHeader.match(/Max-Age=(\d+)/);
+  return match ? Number(match[1]) : null;
+}
 
 describe('POST /auth/register', () => {
   it('creates a user and returns an access token + user info', async () => {
@@ -21,6 +28,22 @@ describe('POST /auth/register', () => {
     expect(cookieHeader).toContain('refreshToken=');
     expect(cookieHeader).toContain('HttpOnly');
     expect(cookieHeader).toContain('Path=/auth/refresh');
+  });
+
+  it('sets a Max-Age reflecting the full refresh token lifetime, not 0', async () => {
+    const res = await request(app).post('/auth/register').send(validUser);
+
+    const cookieHeader = res.headers['set-cookie']?.[0];
+    const maxAge = parseMaxAge(cookieHeader);
+    const expectedSeconds = REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60;
+
+    expect(maxAge).not.toBe(0);
+    expect(maxAge).not.toBeNull();
+    // Allow a small tolerance rather than an exact match, in case the
+    // constant is tweaked slightly or computed with a moment of
+    // clock drift between request and assertion.
+    expect(maxAge).toBeGreaterThan(expectedSeconds - 60);
+    expect(maxAge).toBeLessThanOrEqual(expectedSeconds);
   });
 
   it('rejects a duplicate email with 409', async () => {
@@ -83,6 +106,10 @@ describe('POST /auth/refresh', () => {
     const newCookie = refreshRes.headers['set-cookie']?.[0];
     expect(newCookie).toContain('refreshToken=');
     expect(newCookie).not.toBe(cookie[0]);
+
+    const rotatedMaxAge = parseMaxAge(newCookie);
+    expect(rotatedMaxAge).not.toBe(0);
+    expect(rotatedMaxAge).toBeGreaterThan(REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 - 60);
   });
 
   it('rejects a reused (already-rotated) refresh token', async () => {
