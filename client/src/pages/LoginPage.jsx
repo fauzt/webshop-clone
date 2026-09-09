@@ -72,7 +72,7 @@ export function LoginPage() {
 
       <p className="mt-4 text-sm text-slate-600">
         Don't have an account?{' '}
-        <Link to="/register" className="font-medium text-slate-900 underline">
+        <Link to="/register" className="font-medium text-orange-900 underline">
           Register
         </Link>
       </p>
