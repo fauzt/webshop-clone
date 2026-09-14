@@ -30,6 +30,26 @@ export function resetMockBooksState() {
   fakeBooks = [];
 }
 
+// A fake "cart_items table" for the logged-in user. Each seeded item
+// needs a book with a price/stock, so subtotal can be computed the same
+// way the real backend's cartController does.
+export let fakeCartItems = [];
+
+export function seedCart(items) {
+  fakeCartItems = items.map((item) => ({
+    ...item,
+    subtotal: (Number(item.book.price) * item.quantity).toFixed(2),
+  }));
+}
+
+export function resetMockCartState() {
+  fakeCartItems = [];
+}
+
+function cartTotal() {
+  return fakeCartItems.reduce((sum, item) => sum + Number(item.subtotal), 0).toFixed(2);
+}
+
 export const handlers = [
   http.post(`${API_URL}/auth/register`, async ({ request }) => {
     const { email, password } = await request.json();
@@ -130,5 +150,64 @@ http.get(`${API_URL}/books`, ({ request }) => {
       { item: { id: randomUUID(), quantity, book } },
       { status: 201 }
     );
+  }),
+
+  http.get(`${API_URL}/cart`, () => {
+    return HttpResponse.json({ items: fakeCartItems, total: cartTotal() });
+  }),
+
+  http.put(`${API_URL}/cart/items/:id`, async ({ request, params }) => {
+    const { quantity } = await request.json();
+    const item = fakeCartItems.find((i) => i.id === params.id);
+
+    if (!item) {
+      return HttpResponse.json({ error: 'Cart item not found' }, { status: 404 });
+    }
+    if (quantity > item.book.stock) {
+      return HttpResponse.json({ error: `Only ${item.book.stock} in stock` }, { status: 400 });
+    }
+
+    item.quantity = quantity;
+    item.subtotal = (Number(item.book.price) * quantity).toFixed(2);
+
+    return HttpResponse.json({ item });
+  }),
+
+  http.delete(`${API_URL}/cart/items/:id`, ({ params }) => {
+    const existed = fakeCartItems.some((i) => i.id === params.id);
+    if (!existed) {
+      return HttpResponse.json({ error: 'Cart item not found' }, { status: 404 });
+    }
+    fakeCartItems = fakeCartItems.filter((i) => i.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.delete(`${API_URL}/cart`, () => {
+    fakeCartItems = [];
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Mirrors the real checkout: rejects an empty cart, otherwise creates an
+  // order snapshotting each item's current price, then clears the cart.
+  http.post(`${API_URL}/orders/checkout`, () => {
+    if (fakeCartItems.length === 0) {
+      return HttpResponse.json({ error: 'Cart is empty' }, { status: 400 });
+    }
+
+    const order = {
+      id: randomUUID(),
+      status: 'PAID',
+      total: cartTotal(),
+      items: fakeCartItems.map((item) => ({
+        bookId: item.book.id,
+        quantity: item.quantity,
+        price: item.book.price,
+        book: item.book,
+      })),
+    };
+
+    fakeCartItems = [];
+
+    return HttpResponse.json({ order }, { status: 201 });
   }),
 ];
