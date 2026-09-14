@@ -25,7 +25,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto mt-16 max-w-sm px-4">
+    <div className="mx-auto mt-16 mb-8 max-w-sm px-4">
       <h1 className="text-2xl font-semibold text-slate-900">Create an account</h1>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -70,7 +70,7 @@ export function RegisterPage() {
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-slate-600">
+      <p className="mt-4 text-sm text-slate-900">
         Already have an account?{' '}
         <Link to="/login" className="font-medium text-orange-900 underline">
           Log in

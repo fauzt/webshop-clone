@@ -48,7 +48,7 @@ export function CartLineItem({ item, onChange }) {
           <button
             onClick={() => commitQuantity(quantity - 1)}
             disabled={isUpdating || quantity <= 1}
-            className="h-7 w-7 rounded border border-slate-300 text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-7 w-7 rounded border border-slate-300 text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             −
           </button>
@@ -56,7 +56,7 @@ export function CartLineItem({ item, onChange }) {
           <button
             onClick={() => commitQuantity(quantity + 1)}
             disabled={isUpdating}
-            className="h-7 w-7 rounded border border-slate-300 text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-7 w-7 rounded border border-slate-300 text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             +
           </button>
