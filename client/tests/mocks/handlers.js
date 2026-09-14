@@ -3,8 +3,7 @@ import { randomUUID } from 'node:crypto';
 
 const API_URL = 'http://localhost:4000';
 
-// A tiny fake "database" so tests can register a user and then log in as
-// them, exercising the real request/response flow rather than stubbing it.
+// A fake "database" so tests can register a user and then log in as them
 export const fakeUsers = new Map();
 
 // Tracks whether a "session" (refresh cookie) is currently valid. Tests
@@ -16,6 +15,19 @@ export function resetMockAuthState() {
   fakeUsers.clear();
   sessionState.hasValidRefreshToken = false;
   sessionState.currentUser = null;
+}
+
+// A fake "books table" — an array (not a Map) since tests need to seed
+// specific ordering/pagination scenarios, which a Map's insertion order
+// makes awkward to reason about compared to a plain array.
+export let fakeBooks = [];
+
+export function seedBooks(books) {
+  fakeBooks = books;
+}
+
+export function resetMockBooksState() {
+  fakeBooks = [];
 }
 
 export const handlers = [
@@ -74,5 +86,49 @@ export const handlers = [
     sessionState.hasValidRefreshToken = false;
     sessionState.currentUser = null;
     return new HttpResponse(null, { status: 204 });
+  }),
+
+http.get(`${API_URL}/books`, ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get('page')) || 1;
+    const limit = Number(url.searchParams.get('limit')) || 12;
+    const search = url.searchParams.get('search');
+
+    let filtered = fakeBooks;
+    if (search) {
+      const term = search.toLowerCase();
+      filtered = filtered.filter(
+        (book) =>
+          book.title.toLowerCase().includes(term) || book.author.toLowerCase().includes(term)
+      );
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const books = filtered.slice(start, start + limit);
+
+    return HttpResponse.json({
+      books,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  }),
+
+  // Mirrors the real bookController's stock check for BookCard's 
+  // add-to-cart button to be tested against realistic responses.
+  http.post(`${API_URL}/cart/items`, async ({ request }) => {
+    const { bookId, quantity } = await request.json();
+    const book = fakeBooks.find((b) => b.id === bookId);
+
+    if (!book) {
+      return HttpResponse.json({ error: 'Book not found' }, { status: 404 });
+    }
+    if (quantity > book.stock) {
+      return HttpResponse.json({ error: `Only ${book.stock} in stock` }, { status: 400 });
+    }
+
+    return HttpResponse.json(
+      { item: { id: randomUUID(), quantity, book } },
+      { status: 201 }
+    );
   }),
 ];
