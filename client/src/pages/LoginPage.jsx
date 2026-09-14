@@ -18,8 +18,7 @@ export function LoginPage() {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      // Matches the server's deliberately vague message — we don't
-      // reveal here either whether the email exists.
+      // vague enough error message for email login to obscure details
       setError(err.response?.data?.error || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);

@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx';
-//import { HomePage } from './pages/HomePage.jsx';
+import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { CatalogPage } from './pages/CatalogPage';
-import { LoginPage } from './pages/LoginPage.jsx';
-import { RegisterPage } from './pages/RegisterPage.jsx';
+import { CartPage } from './pages/CartPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 
 export default function App() {
   return (
@@ -15,10 +16,18 @@ export default function App() {
           <Route path="/" element={<CatalogPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          {/* Cart, checkout, orders, and admin book-management routes
-              (wrapped in ProtectedRoute) are added as those pages are built. */}
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute>
+                <CartPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* TODO: Orders history and admin book-management routes. */}
         </Routes>
       </AuthProvider>
     </BrowserRouter>
   );
 }
+

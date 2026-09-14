@@ -11,8 +11,7 @@ export function CatalogPage() {
   const [error, setError] = useState(null);
 
   // Debounce the search box: wait 400ms after the user stops typing before
-  // it actually triggers a request. Without this, every keystroke would
-  // fire its own API call.
+  // it actually triggers a request and fires API call
   useEffect(() => {
     const timeout = setTimeout(() => {
       setPage(1); // a new search always starts back at page 1

@@ -3,12 +3,6 @@ import axios from 'axios';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 // The access token lives in plain memory, not localStorage/sessionStorage.
-// This is a deliberate security choice matching the server's design: since
-// the token is readable by any JS on the page, storing it in browser storage
-// would let an XSS attack read it long after the fact. Keeping it only in
-// memory means it disappears on page refresh — which is exactly why the
-// silent-refresh-on-load flow in AuthContext exists, to restore a session
-// using the httpOnly refresh cookie instead.
 let accessToken = null;
 
 export function setAccessToken(token) {
@@ -31,8 +25,8 @@ export function setOnAuthFailure(callback) {
 export const api = axios.create({
   baseURL: BASE_URL,
   // Required so the browser sends/receives the httpOnly refresh cookie on
-  // cross-origin requests (client on :5173, server on :4000). Must be paired
-  // with the server's cors({ credentials: true, origin: <exact client URL> }).
+  // cross-origin requests.
+  // Must be paired with the server's cors({ credentials: true, origin: <exact client URL> }).
   withCredentials: true,
 });
 
@@ -48,7 +42,7 @@ api.interceptors.request.use((config) => {
 // If a request comes back 401 (access token missing/expired), try ONE
 // silent refresh using the httpOnly cookie, then retry the original
 // request with the new token. If the refresh itself fails, the session is
-// truly over — clear everything and let the app react (e.g. redirect to login).
+// truly over, so clear everything and let the app react (e.g. redirect to login).
 api.interceptors.response.use(
   (response) => response,
   async (error) => {

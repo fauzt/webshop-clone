@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
         setUser(data.user);
       } catch {
         // No valid refresh cookie — that's a normal logged-out state,
-        // not an error worth surfacing to the user.
+        // not an error to show.
         setUser(null);
       } finally {
         setIsLoading(false);
