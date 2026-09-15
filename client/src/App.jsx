@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { CatalogPage } from './pages/CatalogPage';
 import { CartPage } from './pages/CartPage';
+import { OrdersPage } from './pages/OrdersPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 
@@ -24,7 +25,15 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {/* TODO: Orders history and admin book-management routes. */}
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <OrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* TODO: admin book-management routes. */}
         </Routes>
       </AuthProvider>
     </BrowserRouter>

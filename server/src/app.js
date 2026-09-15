@@ -23,7 +23,7 @@ app.use(cookieParser());
 app.use('/auth', authRoutes);
 app.use('/books', bookRoutes);
 app.use('/cart', cartRoutes);
-app.use('/order', orderRoutes);
+app.use('/orders', orderRoutes);
 
 // Example of a protected route — replace with your real book routes later.
 // GET /me returns the logged-in user's identity from the access token.
