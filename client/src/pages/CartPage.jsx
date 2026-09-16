@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getCart } from '../api/cart';
 import { checkout } from '../api/orders';
 import { CartLineItem } from '../components/CartLineItem';
 
 export function CartPage() {
+  const [searchParams] = useSearchParams();
   const [cart, setCart] = useState({ items: [], total: '0.00' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
-  const [completedOrder, setCompletedOrder] = useState(null);
+
+  const wasCancelled = searchParams.get('checkout') === 'cancelled';
 
   const loadCart = useCallback(() => {
     setIsLoading(true);
@@ -28,38 +30,22 @@ export function CartPage() {
     setIsCheckingOut(true);
     setCheckoutError(null);
     try {
-      const { order } = await checkout();
-      setCompletedOrder(order);
+      const { url } = await checkout();
+      window.location.href = url; //full page navigation to Stripe
     } catch (err) {
-      // 409 here specifically means stock changed since items
-      // were added to the cart
+      // 409 here means stock changed since items were added to the cart
       const message =
         err.response?.status === 409
           ? err.response.data.error
           : err.response?.data?.error || 'Checkout failed. Please try again.';
       setCheckoutError(message);
-      loadCart(); // refresh in case stock/quantities changed server-side
-    } finally {
       setIsCheckingOut(false);
+      loadCart(); // refresh in case stock/quantities changed server-side
     }
   }
 
-  if (completedOrder) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">Order placed!</h1>
-        <p className="mt-2 text-slate-600">
-          Order #{completedOrder.id.slice(0, 8)} — total ${completedOrder.total}
-        </p>
-        <Link to="/" className="mt-6 inline-block text-slate-900 underline">
-          Continue shopping
-        </Link>
-      </div>
-    );
-  }
-
   if (isLoading) {
-    return <p className="p-8 text-center text-slate-500">Loading your cart…</p>;
+    return <p className="p-8 text-center text-slate-500">Loading your cart...</p>;
   }
 
   if (error) {
@@ -69,6 +55,12 @@ export function CartPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-semibold text-slate-900">Your Cart</h1>
+
+      {wasCancelled && (
+        <p className="mt-4 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Checkout was cancelled. Your cart has been kept as is.
+        </p>
+      )}
 
       {cart.items.length === 0 ? (
         <div className="mt-8 text-center text-slate-500">
@@ -97,7 +89,7 @@ export function CartPage() {
             disabled={isCheckingOut}
             className="mt-4 w-full rounded-md bg-slate-900 px-4 py-3 text-white hover:bg-slate-800 disabled:opacity-50"
           >
-            {isCheckingOut ? 'Placing order…' : 'Checkout'}
+            {isCheckingOut ? 'Redirecting to checkout...' : 'Checkout'}
           </button>
         </>
       )}

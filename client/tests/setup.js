@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { server } from './mocks/server.js';
-import { resetMockAuthState, resetMockBooksState, resetMockCartState } from './mocks/handlers.js';
+import { resetMockAuthState, resetMockBooksState, resetMockCartState, resetMockOrdersState } from './mocks/handlers.js';
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
@@ -13,6 +13,7 @@ afterEach(() => {
   resetMockAuthState();
   resetMockBooksState();
   resetMockCartState();
+  resetMockOrdersState();
   cleanup();
 });
 

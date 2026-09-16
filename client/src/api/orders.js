@@ -2,7 +2,7 @@ import { api } from './client';
 
 export async function checkout() {
   const { data } = await api.post('/orders/checkout');
-  return data; // { order }
+  return data; // { url, orderId }
 }
 
 export async function listOrders() {

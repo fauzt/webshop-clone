@@ -50,6 +50,20 @@ function cartTotal() {
   return fakeCartItems.reduce((sum, item) => sum + Number(item.subtotal), 0).toFixed(2);
 }
 
+// A fake "orders table". Tests can mutate this directly between two
+// fetches (e.g. flipping an order's status from PENDING to PAID) to
+// simulate the webhook having processed in between OrdersPage's initial
+// load and its delayed re-fetch.
+export let fakeOrders = [];
+
+export function seedOrders(orders) {
+  fakeOrders = orders;
+}
+
+export function resetMockOrdersState() {
+  fakeOrders = [];
+}
+
 export const handlers = [
   http.post(`${API_URL}/auth/register`, async ({ request }) => {
     const { email, password } = await request.json();
@@ -187,27 +201,25 @@ http.get(`${API_URL}/books`, ({ request }) => {
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Mirrors the real checkout: rejects an empty cart, otherwise creates an
-  // order snapshotting each item's current price, then clears the cart.
+  // Mirrors the real checkout: rejects an empty cart, otherwise reserves
+  // stock (clears the fake cart) and returns a Stripe-style checkout URL
+  // instead of a completed order. The real order is only marked PAID later
+  // by the webhook, which this mock does not simulate.
   http.post(`${API_URL}/orders/checkout`, () => {
     if (fakeCartItems.length === 0) {
       return HttpResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    const order = {
-      id: randomUUID(),
-      status: 'PAID',
-      total: cartTotal(),
-      items: fakeCartItems.map((item) => ({
-        bookId: item.book.id,
-        quantity: item.quantity,
-        price: item.book.price,
-        book: item.book,
-      })),
-    };
-
+    const orderId = randomUUID();
     fakeCartItems = [];
 
-    return HttpResponse.json({ order }, { status: 201 });
+    return HttpResponse.json(
+      { url: `https://mock-stripe-checkout.test/session/${orderId}`, orderId },
+      { status: 201 }
+    );
+  }),
+
+  http.get(`${API_URL}/orders`, () => {
+      return HttpResponse.json({ orders: fakeOrders });
   }),
 ];

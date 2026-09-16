@@ -14,15 +14,48 @@ const sampleBook = {
   stock: 5,
 };
 
-function renderCartPage() {
+function renderCartPage(initialPath = '/cart') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialPath]}>
       <CartPage />
     </MemoryRouter>
   );
 }
 
-describe('CartPage — empty cart', () => {
+// jsdom does not implement real page navigation, so assigning
+// window.location.href throws "Not implemented" unless the location object
+// is replaced with a plain mock first. This lets the test observe what URL
+// the component tried to navigate to, without actually navigating.
+const originalLocation = window.location;
+const originalHref = originalLocation.href;
+
+function createMockLocation() {
+  return {
+    href: originalHref,
+    origin: originalLocation.origin,
+    protocol: originalLocation.protocol,
+    host: originalLocation.host,
+    hostname: originalLocation.hostname,
+    port: originalLocation.port,
+    pathname: originalLocation.pathname,
+    search: originalLocation.search,
+    hash: originalLocation.hash,
+    assign: () => {},
+    replace: () => {},
+    reload: () => {},
+  };
+}
+
+beforeEach(() => {
+  delete window.location;
+  window.location = createMockLocation();
+});
+
+afterEach(() => {
+  window.location = originalLocation;
+});
+
+describe('CartPage - empty cart', () => {
   it('shows an empty state with a link back to the catalogue', async () => {
     seedCart([]);
     renderCartPage();
@@ -32,7 +65,7 @@ describe('CartPage — empty cart', () => {
   });
 });
 
-describe('CartPage — with items', () => {
+describe('CartPage - with items', () => {
   it('renders each item and the correct total', async () => {
     const secondBook = {
       id: 'book-2',
@@ -41,7 +74,6 @@ describe('CartPage — with items', () => {
       price: '15.00',
       stock: 3,
     };
-
     seedCart([
       { id: 'item-1', quantity: 2, book: sampleBook },
       { id: 'item-2', quantity: 1, book: secondBook }
@@ -49,14 +81,15 @@ describe('CartPage — with items', () => {
     renderCartPage();
 
     await waitFor(() => expect(screen.getByText('Clean Code')).toBeInTheDocument());
-    expect(screen.getByText('$40.00')).toBeInTheDocument(); // line subtotal
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getByText('$40.00')).toBeInTheDocument();
+    expect(screen.getByText('$15.00')).toBeInTheDocument();
+    expect(screen.getByText('$55.00')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Checkout' })).toBeInTheDocument();
   });
 });
 
-describe('CartPage — checkout', () => {
-  it('shows an order confirmation after a successful checkout', async () => {
+describe('CartPage - checkout', () => {
+  it('redirects to the Stripe checkout URL on success', async () => {
     const user = userEvent.setup();
     seedCart([{ id: 'item-1', quantity: 1, book: sampleBook }]);
     renderCartPage();
@@ -64,9 +97,9 @@ describe('CartPage — checkout', () => {
     await waitFor(() => expect(screen.getByText('Clean Code')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Checkout' }));
 
-    await waitFor(() => expect(screen.getByText('Order placed!')).toBeInTheDocument());
-    expect(screen.getByText(/total \$20\.00/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Continue shopping' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(window.location.href).toMatch(/^https:\/\/mock-stripe-checkout\.test\/session\//)
+    );
   });
 
   it('shows a specific error and keeps the cart visible on a 409 stock conflict', async () => {
@@ -89,9 +122,20 @@ describe('CartPage — checkout', () => {
     expect(
       await screen.findByText('"Clean Code" no longer has enough stock')
     ).toBeInTheDocument();
-    // Should NOT have jumped to the confirmation screen.
-    expect(screen.queryByText('Order placed!')).not.toBeInTheDocument();
-    // The cart itself should still be visible/usable.
+    // No navigation should have happened on failure.
+    expect(window.location.href).toBe('http://localhost:3000/');
     expect(screen.getByRole('button', { name: 'Checkout' })).toBeInTheDocument();
+  });
+});
+
+describe('CartPage - returning from a cancelled checkout', () => {
+  it('shows a cancellation notice without treating it as an error', async () => {
+    seedCart([{ id: 'item-1', quantity: 1, book: sampleBook }]);
+    renderCartPage('/cart?checkout=cancelled');
+
+    await waitFor(() => expect(screen.getByText('Clean Code')).toBeInTheDocument());
+    expect(
+      screen.getByText('Checkout was cancelled. Your cart has been kept as is.')
+    ).toBeInTheDocument();
   });
 });
