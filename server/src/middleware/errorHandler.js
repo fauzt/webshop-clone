@@ -1,5 +1,4 @@
-// Catches errors thrown/passed via next(err) in any route and returns a
-// consistent JSON shape instead of leaking stack traces to clients.
+//eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   console.error(err);
 

@@ -1,7 +1,6 @@
 import { verifyAccessToken } from '../utils/tokens.js';
 
 // Attaches req.user = { id, role } if a valid access token is present.
-// Rejects with 401 if missing/invalid/expired.
 function requireAuth(req, res, next) {
   const header = req.headers.authorization;
 
@@ -15,7 +14,7 @@ function requireAuth(req, res, next) {
     const payload = verifyAccessToken(token);
     req.user = { id: payload.sub, role: payload.role };
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: 'Invalid or expired access token' });
   }
 }

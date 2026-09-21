@@ -5,12 +5,12 @@ import {
   listBooksQuerySchema,
 } from '../utils/bookValidation.js';
 
-// GET /books — public, paginated, filterable, searchable.
+// GET /books - public, paginated, filterable, searchable.
 async function listBooks(req, res, next) {
   try {
     const { page, limit, search, categoryId, sort } = listBooksQuerySchema.parse(req.query);
 
-    // Build the WHERE clause conditionally — only add filters that were actually provided.
+    // Build the WHERE clause conditionally; only add filters that were actually provided.
     const where = {};
     if (categoryId) where.categoryId = categoryId;
     if (search) {
@@ -30,7 +30,6 @@ async function listBooks(req, res, next) {
     };
     const orderBy = sortToOrderByMap[sort] || { createdAt: 'desc' };
 
-    // Run the count and the page fetch in parallel — they're independent queries.
     const [total, books] = await Promise.all([
       prisma.book.count({ where }),
       prisma.book.findMany({
@@ -56,7 +55,7 @@ async function listBooks(req, res, next) {
   }
 }
 
-// GET /books/:id — public.
+// GET /books/:id - public.
 async function getBook(req, res, next) {
   try {
     const book = await prisma.book.findUnique({
@@ -76,7 +75,7 @@ async function getBook(req, res, next) {
   }
 }
 
-// POST /books — admin only.
+// POST /books - admin only.
 async function createBook(req, res, next) {
   try {
     const data = createBookSchema.parse(req.body);
@@ -87,7 +86,7 @@ async function createBook(req, res, next) {
   }
 }
 
-// PUT /books/:id — admin only. Partial update.
+// PUT /books/:id - admin only. Partial update.
 async function updateBook(req, res, next) {
   try {
     const data = updateBookSchema.parse(req.body);
@@ -113,7 +112,7 @@ async function updateBook(req, res, next) {
   }
 }
 
-// DELETE /books/:id — admin only.
+// DELETE /books/:id - admin only.
 async function deleteBook(req, res, next) {
   try {
     await prisma.book.delete({ where: { id: req.params.id } })

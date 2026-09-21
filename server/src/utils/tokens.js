@@ -17,9 +17,6 @@ function verifyAccessToken(token) {
   return verify(token, process.env.JWT_ACCESS_SECRET);
 }
 
-// Refresh tokens are opaque random strings (not JWTs) stored hashed-free in the DB
-// so they can be looked up and revoked directly. Simpler to reason about than
-// verifying + cross-checking a JWT refresh token against a DB record.
 function generateRefreshToken() {
   return randomBytes(64).toString('hex');
 }

@@ -24,10 +24,10 @@ export async function checkout(req, res, next) {
 
       // Atomic "decrement only if enough stock".
       // Stock is reserved when someone commits to checking out.
-      // Stripe sessions can sit open for (default 24h), and we don't want
-      // that book sellable to someone else in the meantime.
-      // Tradeoff: an abandoned checkout needs to release that reservation
-      // later (handled by a checkout.session.expired webhook).
+      // Stripe sessions can sit open for (default 24h), book shouldn't
+      // be sellable to someone else in the meantime.
+      // Tradeoff: an abandoned checkout needs to release that
+      // reservation later (handled by a checkout.session.expired webhook).
       for (const item of cartItems) {
         const result = await tx.book.updateMany({
           where: { id: item.bookId, stock: { gte: item.quantity } },
@@ -36,7 +36,7 @@ export async function checkout(req, res, next) {
 
         if (result.count === 0) {
           const err = new Error(`"${item.book.title}" no longer has enough stock`);
-          err.status = 409; // Conflict — the data changed since the cart was built.
+          err.status = 409; // Conflict - the data changed since the cart was built.
           throw err;
         }
       }
@@ -116,7 +116,7 @@ export async function checkout(req, res, next) {
   }
 }
 
-// GET /orders — the logged-in user's own order history.
+// GET /orders - the logged-in user's own order history.
 export async function listOrders(req, res, next) {
   try {
     const orders = await prisma.order.findMany({

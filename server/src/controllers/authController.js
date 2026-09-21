@@ -64,7 +64,7 @@ async function login(req, res, next) {
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    // Deliberately vague error — don't reveal whether the email exists.
+    // Deliberately vague error; don't reveal whether the email exists.
     if (!user) {
       return res.status(401).json({ error: LOGIN_ERROR_MESSAGE });
     }
@@ -96,8 +96,6 @@ async function refresh(req, res, next) {
       return res.status(401).json({ error: 'Refresh token invalid or expired' });
     }
 
-    // Rotate: revoke the used token and issue a new one.
-    // Limits the damage window if a refresh token is ever stolen.
     await prisma.refreshToken.update({
       where: { id: stored.id },
       data: { revoked: true },
