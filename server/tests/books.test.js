@@ -3,7 +3,7 @@ import app from '../src/app.js';
 import prisma from '../src/config/db.js';
 
 // Registers a user via the real API, then promotes them to ADMIN directly
-// via Prisma — there's deliberately no public endpoint that grants admin,
+// via Prisma. There's deliberately no public endpoint that grants admin,
 // so tests reach into the DB the same way you'd do it manually in dev.
 async function createUserAndGetToken({ role = 'USER', email } = {}) {
   const userEmail = email || `${role.toLowerCase()}-${Date.now()}@example.com`;
@@ -17,8 +17,8 @@ async function createUserAndGetToken({ role = 'USER', email } = {}) {
       data: { role: 'ADMIN' },
     });
     // The access token issued at registration still says role: USER
-    // (see the note in tokens.js/auth.js about tokens being self-contained) —
-    // so we log in again to get a fresh token that reflects the new role.
+    // (see the note in tokens.js/auth.js about tokens being self-contained)
+    // So we log in again to get a fresh token that reflects the new role.
     const loginRes = await request(app)
       .post('/auth/login')
       .send({ email: userEmail, password: 'password123' });

@@ -83,8 +83,6 @@ describe('POST /auth/login', () => {
   });
 
   it('rejects a nonexistent email with the same 401 as a wrong password', async () => {
-    // Same assertion as the wrong-password case on purpose — this is what
-    // proves the API doesn't leak whether an email is registered.
     const res = await request(app)
       .post('/auth/login')
       .send({ email: 'nobody@example.com', password: 'whatever123' });
@@ -116,7 +114,7 @@ describe('POST /auth/refresh', () => {
     const registerRes = await request(app).post('/auth/register').send(validUser);
     const originalCookie = registerRes.headers['set-cookie'];
 
-    // First use rotates it — this should succeed.
+    // First use rotates it, this should succeed.
     await request(app).post('/auth/refresh').set('Cookie', originalCookie);
 
     // Reusing the now-revoked original token should fail.

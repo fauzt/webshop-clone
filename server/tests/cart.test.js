@@ -84,8 +84,8 @@ describe('POST /cart/items', () => {
     expect(res.status).toBe(201);
     expect(res.body.item.quantity).toBe(5);
 
-    // Confirm there's still only ONE row for this book, not two —
-    // proves the upsert path was taken, not a duplicate create.
+    // Confirm there's still only one row for this book, not two.
+    // Proves the upsert path was taken, not a duplicate create.
     const cartRes = await request(app).get('/cart').set('Authorization', `Bearer ${token}`);
     expect(cartRes.body.items).toHaveLength(1);
   });
