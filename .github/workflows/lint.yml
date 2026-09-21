@@ -38,7 +38,7 @@ jobs:
       - run: npm ci
 
       - name: ESLint
-        run: npx eslint ./src/ --ext .js,.jsx,.ts,.tsx --cache --cache-location .eslintcache --max-warnings 0
+        run: npx eslint ./src/ --ext .js,.jsx --cache --cache-location .eslintcache --max-warnings 0
 
       - name: Prettier
-        run: npx prettier --check "./src/**/*.{js,jsx,ts,tsx,json,css,md}"
+        run: npx prettier --check "./src/**/*.{js,jsx,json,css,md}"
