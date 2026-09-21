@@ -115,8 +115,7 @@ async function updateBook(req, res, next) {
 // DELETE /books/:id - admin only.
 async function deleteBook(req, res, next) {
   try {
-    await prisma.book.delete({ where: { id: req.params.id } })
-    .catch((prismaErr) => {
+    await prisma.book.delete({ where: { id: req.params.id } }).catch((prismaErr) => {
       if (prismaErr.code === 'P2025') {
         const err = new Error('Book not found');
         err.status = 404;

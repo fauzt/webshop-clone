@@ -6,11 +6,9 @@ const ACCESS_TOKEN_TTL = '15m';
 export const REFRESH_TOKEN_TTL_DAYS = 30;
 
 function signAccessToken(user) {
-  return sign(
-    { sub: user.id, role: user.role },
-    process.env.JWT_ACCESS_SECRET,
-    { expiresIn: ACCESS_TOKEN_TTL }
-  );
+  return sign({ sub: user.id, role: user.role }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: ACCESS_TOKEN_TTL,
+  });
 }
 
 function verifyAccessToken(token) {
@@ -27,9 +25,4 @@ function refreshTokenExpiry() {
   return d;
 }
 
-export {
-  signAccessToken,
-  verifyAccessToken,
-  generateRefreshToken,
-  refreshTokenExpiry,
-};
+export { signAccessToken, verifyAccessToken, generateRefreshToken, refreshTokenExpiry };

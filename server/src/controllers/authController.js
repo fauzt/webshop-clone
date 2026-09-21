@@ -1,7 +1,12 @@
 import { hash, compare } from 'bcrypt';
 import prisma from '../config/db.ts';
 import { registerSchema, loginSchema } from '../utils/validation.js';
-import { signAccessToken, generateRefreshToken, refreshTokenExpiry, REFRESH_TOKEN_TTL_DAYS } from '../utils/tokens.js';
+import {
+  signAccessToken,
+  generateRefreshToken,
+  refreshTokenExpiry,
+  REFRESH_TOKEN_TTL_DAYS,
+} from '../utils/tokens.js';
 
 const SALT_ROUNDS = 12;
 
@@ -60,7 +65,7 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const LOGIN_ERROR_MESSAGE = 'Invalid email or password'
+    const LOGIN_ERROR_MESSAGE = 'Invalid email or password';
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });

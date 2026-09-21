@@ -43,11 +43,7 @@ export async function handleStripeWebhook(req, res) {
     // in transit. Skipping this check would mean anyone who discovers
     // this URL could POST a fake "payment succeeded" event and get a free
     // order marked PAID.
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }

@@ -22,7 +22,7 @@ app.use(
   })
 );
 
-app.use('/webhooks', webhookRoutes)
+app.use('/webhooks', webhookRoutes);
 
 app.use(json());
 app.use(cookieParser());
