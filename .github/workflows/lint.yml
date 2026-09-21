@@ -30,15 +30,14 @@ jobs:
         uses: actions/cache@v6
         with:
           path: .eslintcache
-          key: eslint-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.ts') }}
+          key: eslint-${{ hashFiles('**/package-lock.json','**/eslint.config.js') }}
           restore-keys: |
-            eslint-${{ hashFiles('**/package-lock.json') }}-
             eslint-
 
       - run: npm ci
 
       - name: ESLint
-        run: npx eslint ./src/ --ext .js,.jsx --cache --cache-location .eslintcache --max-warnings 0
+        run: npx eslint ./src/ --ext .js,.jsx --cache --cache-strategy content --cache-location .eslintcache --max-warnings 0
 
       - name: Prettier
         run: npx prettier --check "./src/**/*.{js,jsx,json,css,md}"
