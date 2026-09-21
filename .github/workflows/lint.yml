@@ -3,6 +3,8 @@ name: Lint code quality
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: lint-${{ github.ref }}
@@ -30,10 +32,10 @@ jobs:
             eslint-${{ hashFiles('**/package-lock.json') }}-
             eslint-
 
-      - run: npm ci
+      - run: npm ci --prefix server/
 
       - name: ESLint
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx --cache --cache-location .eslintcache --max-warnings 0
+        run: npx eslint ./server/src/ --ext .js,.jsx,.ts,.tsx --cache --cache-location .eslintcache --max-warnings 0
 
       - name: Prettier
-        run: npx prettier --check "**/*.{js,jsx,ts,tsx,json,css,md}"
+        run: npx prettier --check "./server/src/**/*.{js,jsx,ts,tsx,json,css,md}"
