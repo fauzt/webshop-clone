@@ -11,9 +11,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-js:
-    name: JavaScript/TypeScript
+  lint-js-backend:
+    name: Lint JavaScript Backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server/
     steps:
       - uses: actions/checkout@v7
 
@@ -32,10 +35,10 @@ jobs:
             eslint-${{ hashFiles('**/package-lock.json') }}-
             eslint-
 
-      - run: npm ci --prefix server/
+      - run: npm ci
 
       - name: ESLint
-        run: npx eslint ./server/src/ --ext .js,.jsx,.ts,.tsx --cache --cache-location .eslintcache --max-warnings 0
+        run: npx eslint ./src/ --ext .js,.jsx,.ts,.tsx --cache --cache-location .eslintcache --max-warnings 0
 
       - name: Prettier
-        run: npx prettier --check "./server/src/**/*.{js,jsx,ts,tsx,json,css,md}"
+        run: npx prettier --check "./src/**/*.{js,jsx,ts,tsx,json,css,md}"
