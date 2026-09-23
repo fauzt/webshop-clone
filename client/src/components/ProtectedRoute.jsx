@@ -7,9 +7,6 @@ import { useAuth } from '../context/AuthContext.jsx';
 export function ProtectedRoute({ children, requireRole }) {
   const { user, isLoading } = useAuth();
 
-  // Don't decide anything until we know whether the silent refresh on load
-  // succeeded — otherwise a logged-in user would flash to the login page
-  // for a moment on every full page reload.
   if (isLoading) {
     return <div className="p-8 text-center text-slate-500">Loading…</div>;
   }

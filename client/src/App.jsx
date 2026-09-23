@@ -7,6 +7,7 @@ import { CartPage } from './pages/CartPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { AdminBooksPage } from './pages/AdminPage';
 
 export default function App() {
   return (
@@ -33,7 +34,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {/* TODO: admin book-management routes. */}
+          <Route
+            path="/admin/books"
+            element={
+              <ProtectedRoute requireRole="ADMIN">
+                <AdminBooksPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
