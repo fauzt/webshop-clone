@@ -45,72 +45,72 @@ async function issueTokensAndRespond(res, user) {
 }
 
 const register = asyncHandler(async (req, res) => {
-    const { email, password } = registerSchema.parse(req.body);
+  const { email, password } = registerSchema.parse(req.body);
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return res.status(409).json({ error: 'An account with this email already exists' });
-    }
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    return res.status(409).json({ error: 'An account with this email already exists' });
+  }
 
-    const passwordHash = await hash(password, SALT_ROUNDS);
-    const user = await prisma.user.create({
-      data: { email, passwordHash },
-    });
+  const passwordHash = await hash(password, SALT_ROUNDS);
+  const user = await prisma.user.create({
+    data: { email, passwordHash },
+  });
 
-    await issueTokensAndRespond(res, user);
+  await issueTokensAndRespond(res, user);
 });
 
 const login = asyncHandler(async (req, res) => {
-    const LOGIN_ERROR_MESSAGE = 'Invalid email or password';
-    const { email, password } = loginSchema.parse(req.body);
+  const LOGIN_ERROR_MESSAGE = 'Invalid email or password';
+  const { email, password } = loginSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    // Deliberately vague error; don't reveal whether the email exists.
-    if (!user) {
-      return res.status(401).json({ error: LOGIN_ERROR_MESSAGE });
-    }
+  const user = await prisma.user.findUnique({ where: { email } });
+  // Deliberately vague error; don't reveal whether the email exists.
+  if (!user) {
+    return res.status(401).json({ error: LOGIN_ERROR_MESSAGE });
+  }
 
-    const valid = await compare(password, user.passwordHash);
-    if (!valid) {
-      return res.status(401).json({ error: LOGIN_ERROR_MESSAGE });
-    }
+  const valid = await compare(password, user.passwordHash);
+  if (!valid) {
+    return res.status(401).json({ error: LOGIN_ERROR_MESSAGE });
+  }
 
-    await issueTokensAndRespond(res, user);
+  await issueTokensAndRespond(res, user);
 });
 
 const refresh = asyncHandler(async (req, res) => {
-    const token = req.cookies?.refreshToken;
-    if (!token) {
-      return res.status(401).json({ error: 'Missing refresh token' });
-    }
+  const token = req.cookies?.refreshToken;
+  if (!token) {
+    return res.status(401).json({ error: 'Missing refresh token' });
+  }
 
-    const stored = await prisma.refreshToken.findUnique({
-      where: { token },
-      include: { user: true },
-    });
+  const stored = await prisma.refreshToken.findUnique({
+    where: { token },
+    include: { user: true },
+  });
 
-    if (!stored || stored.revoked || stored.expiresAt < new Date()) {
-      return res.status(401).json({ error: 'Refresh token invalid or expired' });
-    }
+  if (!stored || stored.revoked || stored.expiresAt < new Date()) {
+    return res.status(401).json({ error: 'Refresh token invalid or expired' });
+  }
 
-    await prisma.refreshToken.update({
-      where: { id: stored.id },
-      data: { revoked: true },
-    });
+  await prisma.refreshToken.update({
+    where: { id: stored.id },
+    data: { revoked: true },
+  });
 
-    await issueTokensAndRespond(res, stored.user);
+  await issueTokensAndRespond(res, stored.user);
 });
 
 const logout = asyncHandler(async (req, res) => {
-    const token = req.cookies?.refreshToken;
-    if (token) {
-      await prisma.refreshToken.updateMany({
-        where: { token },
-        data: { revoked: true },
-      });
-    }
-    res.clearCookie('refreshToken', { path: '/auth/refresh' });
-    res.status(204).send();
+  const token = req.cookies?.refreshToken;
+  if (token) {
+    await prisma.refreshToken.updateMany({
+      where: { token },
+      data: { revoked: true },
+    });
+  }
+  res.clearCookie('refreshToken', { path: '/auth/refresh' });
+  res.status(204).send();
 });
 
 export { register, login, refresh, logout };

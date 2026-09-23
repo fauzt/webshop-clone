@@ -36,6 +36,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bookstore
       JWT_ACCESS_SECRET: test-secret-for-ci-only
       NODE_ENV: test
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
 
     steps:
       - uses: actions/checkout@v7

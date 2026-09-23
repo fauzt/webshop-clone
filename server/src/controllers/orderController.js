@@ -8,61 +8,61 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 // marked PAID later, by the webhook handler.
 // no proof of payment at this point
 export const checkout = asyncHandler(async (req, res) => {
-    const newOrder = await prisma.$transaction(async (tx) => {
-      const cartItems = await tx.cartItem.findMany({
-        where: { userId: req.user.id },
-        include: { book: true },
+  const newOrder = await prisma.$transaction(async (tx) => {
+    const cartItems = await tx.cartItem.findMany({
+      where: { userId: req.user.id },
+      include: { book: true },
+    });
+
+    if (cartItems.length === 0) {
+      const err = new Error('Cart is empty');
+      err.status = 400;
+      throw err;
+    }
+
+    // Atomic "decrement only if enough stock".
+    // Stock is reserved when someone commits to checking out.
+    // Stripe sessions can sit open for (default 24h), book shouldn't
+    // be sellable to someone else in the meantime.
+    // Tradeoff: an abandoned checkout needs to release that
+    // reservation later (handled by a checkout.session.expired webhook).
+    for (const item of cartItems) {
+      const result = await tx.book.updateMany({
+        where: { id: item.bookId, stock: { gte: item.quantity } },
+        data: { stock: { decrement: item.quantity } },
       });
 
-      if (cartItems.length === 0) {
-        const err = new Error('Cart is empty');
-        err.status = 400;
+      if (result.count === 0) {
+        const err = new Error(`"${item.book.title}" no longer has enough stock`);
+        err.status = 409; // Conflict - the data changed since the cart was built.
         throw err;
       }
+    }
 
-      // Atomic "decrement only if enough stock".
-      // Stock is reserved when someone commits to checking out.
-      // Stripe sessions can sit open for (default 24h), book shouldn't
-      // be sellable to someone else in the meantime.
-      // Tradeoff: an abandoned checkout needs to release that
-      // reservation later (handled by a checkout.session.expired webhook).
-      for (const item of cartItems) {
-        const result = await tx.book.updateMany({
-          where: { id: item.bookId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } },
-        });
+    const total = cartItems
+      .reduce((sum, item) => sum + Number(item.book.price) * item.quantity, 0)
+      .toFixed(2);
 
-        if (result.count === 0) {
-          const err = new Error(`"${item.book.title}" no longer has enough stock`);
-          err.status = 409; // Conflict - the data changed since the cart was built.
-          throw err;
-        }
-      }
-
-      const total = cartItems
-        .reduce((sum, item) => sum + Number(item.book.price) * item.quantity, 0)
-        .toFixed(2);
-
-      const order = await tx.order.create({
-        data: {
-          userId: req.user.id,
-          status: 'PENDING',
-          total,
-          items: {
-            create: cartItems.map((item) => ({
-              bookId: item.bookId,
-              quantity: item.quantity,
-              price: item.book.price,
-            })),
-          },
+    const order = await tx.order.create({
+      data: {
+        userId: req.user.id,
+        status: 'PENDING',
+        total,
+        items: {
+          create: cartItems.map((item) => ({
+            bookId: item.bookId,
+            quantity: item.quantity,
+            price: item.book.price,
+          })),
         },
-        include: { items: { include: { book: true } } },
-      });
-
-      await tx.cartItem.deleteMany({ where: { userId: req.user.id } });
-
-      return order;
+      },
+      include: { items: { include: { book: true } } },
     });
+
+    await tx.cartItem.deleteMany({ where: { userId: req.user.id } });
+
+    return order;
+  });
 
   // Stripe's API
   try {
@@ -110,27 +110,27 @@ export const checkout = asyncHandler(async (req, res) => {
 
 // GET /orders - the logged-in user's own order history.
 export const listOrders = asyncHandler(async (req, res) => {
-    const orders = await prisma.order.findMany({
-      where: { userId: req.user.id },
-      include: { items: { include: { book: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
+  const orders = await prisma.order.findMany({
+    where: { userId: req.user.id },
+    include: { items: { include: { book: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
 
-    res.json({ orders });
+  res.json({ orders });
 });
 
 // GET /orders/:id
 export const getOrder = asyncHandler(async (req, res) => {
-    const order = await prisma.order.findUnique({
-      where: { id: req.params.id },
-      include: { items: { include: { book: true } } },
-    });
+  const order = await prisma.order.findUnique({
+    where: { id: req.params.id },
+    include: { items: { include: { book: true } } },
+  });
 
-    if (!order || order.userId !== req.user.id) {
-      const err = new Error('Order not found');
-      err.status = 404;
-      throw err;
-    }
+  if (!order || order.userId !== req.user.id) {
+    const err = new Error('Order not found');
+    err.status = 404;
+    throw err;
+  }
 
-    res.json({ order });
+  res.json({ order });
 });
