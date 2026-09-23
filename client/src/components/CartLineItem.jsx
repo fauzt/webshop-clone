@@ -15,8 +15,7 @@ export function CartLineItem({ item, onChange }) {
       setQuantity(newQuantity);
       onChange(); // tell the parent to re-fetch the cart (total needs recalculating)
     } catch (err) {
-      // Revert the displayed quantity — the server rejected the change
-      // (e.g. not enough stock)
+      // Revert the displayed quantity (e.g. not enough stock)
       setQuantity(item.quantity);
       setError(err.response?.data?.error || 'Could not update quantity');
     } finally {

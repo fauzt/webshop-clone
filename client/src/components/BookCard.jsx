@@ -13,8 +13,6 @@ export function BookCard({ book }) {
     try {
       await addToCart(book.id, 1);
       setStatus('added');
-      // Reset back to the normal button after a moment, so it's clear the
-      // click "took" without permanently changing the button's label.
       setTimeout(() => setStatus('idle'), 1500);
     } catch (err) {
       setStatus('error');
