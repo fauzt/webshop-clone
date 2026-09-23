@@ -1,4 +1,5 @@
 import prisma from '../config/db.ts';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   createBookSchema,
   updateBookSchema,
@@ -6,8 +7,7 @@ import {
 } from '../utils/bookValidation.js';
 
 // GET /books - public, paginated, filterable, searchable.
-async function listBooks(req, res, next) {
-  try {
+const listBooks = asyncHandler(async (req, res) => {
     const { page, limit, search, categoryId, sort } = listBooksQuerySchema.parse(req.query);
 
     // Build the WHERE clause conditionally; only add filters that were actually provided.
@@ -50,14 +50,10 @@ async function listBooks(req, res, next) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // GET /books/:id - public.
-async function getBook(req, res, next) {
-  try {
+const getBook = asyncHandler(async (req, res) => {
     const book = await prisma.book.findUnique({
       where: { id: req.params.id },
       include: { category: true },
@@ -70,25 +66,17 @@ async function getBook(req, res, next) {
     }
 
     res.json({ book });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // POST /books - admin only.
-async function createBook(req, res, next) {
-  try {
+const createBook = asyncHandler(async (req, res) => {
     const data = createBookSchema.parse(req.body);
     const book = await prisma.book.create({ data });
     res.status(201).json({ book });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // PUT /books/:id - admin only. Partial update.
-async function updateBook(req, res, next) {
-  try {
+const updateBook = asyncHandler(async (req, res) => {
     const data = updateBookSchema.parse(req.body);
 
     const book = await prisma.book
@@ -107,14 +95,10 @@ async function updateBook(req, res, next) {
       });
 
     res.json({ book });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // DELETE /books/:id - admin only.
-async function deleteBook(req, res, next) {
-  try {
+const deleteBook = asyncHandler(async (req, res) => {
     await prisma.book.delete({ where: { id: req.params.id } }).catch((prismaErr) => {
       if (prismaErr.code === 'P2025') {
         const err = new Error('Book not found');
@@ -125,9 +109,6 @@ async function deleteBook(req, res, next) {
     });
 
     res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 export { listBooks, getBook, createBook, updateBook, deleteBook };

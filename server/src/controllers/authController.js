@@ -7,6 +7,7 @@ import {
   refreshTokenExpiry,
   REFRESH_TOKEN_TTL_DAYS,
 } from '../utils/tokens.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const SALT_ROUNDS = 12;
 
@@ -43,8 +44,7 @@ async function issueTokensAndRespond(res, user) {
   });
 }
 
-async function register(req, res, next) {
-  try {
+const register = asyncHandler(async (req, res) => {
     const { email, password } = registerSchema.parse(req.body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -58,13 +58,9 @@ async function register(req, res, next) {
     });
 
     await issueTokensAndRespond(res, user);
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
-async function login(req, res, next) {
-  try {
+const login = asyncHandler(async (req, res) => {
     const LOGIN_ERROR_MESSAGE = 'Invalid email or password';
     const { email, password } = loginSchema.parse(req.body);
 
@@ -80,13 +76,9 @@ async function login(req, res, next) {
     }
 
     await issueTokensAndRespond(res, user);
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
-async function refresh(req, res, next) {
-  try {
+const refresh = asyncHandler(async (req, res) => {
     const token = req.cookies?.refreshToken;
     if (!token) {
       return res.status(401).json({ error: 'Missing refresh token' });
@@ -107,13 +99,9 @@ async function refresh(req, res, next) {
     });
 
     await issueTokensAndRespond(res, stored.user);
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
-async function logout(req, res, next) {
-  try {
+const logout = asyncHandler(async (req, res) => {
     const token = req.cookies?.refreshToken;
     if (token) {
       await prisma.refreshToken.updateMany({
@@ -123,9 +111,6 @@ async function logout(req, res, next) {
     }
     res.clearCookie('refreshToken', { path: '/auth/refresh' });
     res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 export { register, login, refresh, logout };

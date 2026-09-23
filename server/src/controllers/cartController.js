@@ -1,4 +1,5 @@
 import prisma from '../config/db.ts';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { addToCartSchema, updateCartItemSchema } from '../utils/cartValidation.js';
 
 function serializeCart(cartItems) {
@@ -14,8 +15,7 @@ function serializeCart(cartItems) {
   return { items, total };
 }
 
-async function getCart(req, res, next) {
-  try {
+const getCart = asyncHandler(async (req, res) => {
     const cartItems = await prisma.cartItem.findMany({
       where: { userId: req.user.id },
       include: { book: true },
@@ -23,13 +23,9 @@ async function getCart(req, res, next) {
     });
 
     res.json(serializeCart(cartItems));
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
-async function addToCart(req, res, next) {
-  try {
+const addToCart = asyncHandler(async (req, res) => {
     const { bookId, quantity } = addToCartSchema.parse(req.body);
     const book = await prisma.book.findUnique({
       where: { id: bookId },
@@ -63,13 +59,9 @@ async function addToCart(req, res, next) {
     });
 
     res.status(201).json({ item: cartItem });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
-async function updateCartItem(req, res, next) {
-  try {
+const updateCartItem = asyncHandler(async (req, res) => {
     const { quantity } = updateCartItemSchema.parse(req.body);
 
     const cartItem = await prisma.cartItem.findUnique({
@@ -96,13 +88,9 @@ async function updateCartItem(req, res, next) {
     });
 
     res.json({ item: updated });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
-async function removeCartItem(req, res, next) {
-  try {
+const removeCartItem = asyncHandler(async (req, res) => {
     const cartItem = await prisma.cartItem.findUnique({
       where: { id: req.params.id },
     });
@@ -118,20 +106,13 @@ async function removeCartItem(req, res, next) {
     });
 
     res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
-async function clearCart(req, res, next) {
-  try {
+const clearCart = asyncHandler(async (req, res) => {
     await prisma.cartItem.deleteMany({
       where: { userId: req.user.id },
     });
     res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 export { getCart, addToCart, updateCartItem, removeCartItem, clearCart };

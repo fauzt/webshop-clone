@@ -1,16 +1,14 @@
 import prisma from '../config/db.ts';
 import stripe from '../config/stripe.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // POST /orders/checkout
 // Reserves stock and creates a PENDING order in one atomic transaction,
 // then creates a Stripe Checkout Session for it. The order is only ever
 // marked PAID later, by the webhook handler.
 // no proof of payment at this point
-export async function checkout(req, res, next) {
-  let newOrder;
-
-  try {
-    newOrder = await prisma.$transaction(async (tx) => {
+export const checkout = asyncHandler(async (req, res) => {
+    const newOrder = await prisma.$transaction(async (tx) => {
       const cartItems = await tx.cartItem.findMany({
         where: { userId: req.user.id },
         include: { book: true },
@@ -65,9 +63,6 @@ export async function checkout(req, res, next) {
 
       return order;
     });
-  } catch (err) {
-    return next(err);
-  }
 
   // Stripe's API
   try {
@@ -95,10 +90,7 @@ export async function checkout(req, res, next) {
 
     res.status(201).json({ url: session.url, orderId: newOrder.id });
   } catch (err) {
-    // Compensating transaction: Stripe failed AFTER we already reserved
-    // stock and created the order in the step above. Without this, that
-    // stock would stay decremented for an order that never got a working
-    // payment session
+    // Compensating transaction: restore the stock and cancel the order
     await prisma.$transaction(async (tx) => {
       for (const item of newOrder.items) {
         await tx.book.update({
@@ -112,13 +104,12 @@ export async function checkout(req, res, next) {
       });
     });
 
-    next(err);
+    throw err;
   }
-}
+});
 
 // GET /orders - the logged-in user's own order history.
-export async function listOrders(req, res, next) {
-  try {
+export const listOrders = asyncHandler(async (req, res) => {
     const orders = await prisma.order.findMany({
       where: { userId: req.user.id },
       include: { items: { include: { book: true } } },
@@ -126,14 +117,10 @@ export async function listOrders(req, res, next) {
     });
 
     res.json({ orders });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // GET /orders/:id
-export async function getOrder(req, res, next) {
-  try {
+export const getOrder = asyncHandler(async (req, res) => {
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
       include: { items: { include: { book: true } } },
@@ -146,7 +133,4 @@ export async function getOrder(req, res, next) {
     }
 
     res.json({ order });
-  } catch (err) {
-    next(err);
-  }
-}
+});
