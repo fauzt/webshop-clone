@@ -51,6 +51,8 @@ jobs:
       - name: Apply migrations to the test database
         run: npx prisma migrate deploy
 
+      - run: npx prisma generate
+
       - name: Run tests
         run: npx vitest run
 
