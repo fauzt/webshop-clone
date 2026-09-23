@@ -14,7 +14,7 @@ export function CatalogPage() {
   // it actually triggers a request and fires API call
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setPage(1); // a new search always starts back at page 1
+      setPage(1);
       setSearch(searchInput);
     }, 400);
     return () => clearTimeout(timeout);

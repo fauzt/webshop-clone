@@ -16,18 +16,16 @@ export function AuthProvider({ children }) {
     // treat it the same as an explicit logout on the frontend.
     setOnAuthFailure(() => setUser(null));
 
-    // On first load, the access token is gone (it only ever lived in
-    // memory), but the refresh cookie may still be valid. Attempting a
-    // refresh here is what makes "stay logged in after a page refresh"
-    // work at all.
+    // Stay logged in after a page refresh.
+    // On first load, the access token is gone,
+    // but the refresh cookie may still be valid.
     async function restoreSession() {
       try {
         const { data } = await api.post('/auth/refresh');
         setAccessToken(data.accessToken);
         setUser(data.user);
       } catch {
-        // No valid refresh cookie — that's a normal logged-out state,
-        // not an error to show.
+        // No valid refresh cookie. Logout.
         setUser(null);
       } finally {
         setIsLoading(false);

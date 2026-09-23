@@ -13,9 +13,6 @@ export function getAccessToken() {
   return accessToken;
 }
 
-// AuthContext registers a callback here so this file (which has no
-// knowledge of React) can still trigger "log the user out" when a refresh
-// attempt fails — e.g. the refresh token expired or was revoked elsewhere.
 let onAuthFailure = () => {};
 
 export function setOnAuthFailure(callback) {
@@ -30,8 +27,7 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// Attach the current access token to every outgoing request automatically,
-// so individual components never have to remember to do this themselves.
+// Attach the current access token to every outgoing request automatically
 api.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -53,8 +49,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Mark this request so a second 401 (e.g. the refresh call itself, or a
-    // retry that still fails) doesn't loop forever trying to refresh again.
+    // Mark this request so a second 401 doesn't loop and refresh forever.
     originalRequest._retry = true;
 
     try {
