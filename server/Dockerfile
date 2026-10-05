@@ -19,6 +19,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src ./src
 COPY package*.json ./
+COPY prisma*.config.ts ./
 
 EXPOSE 4000
 CMD ["node", "src/server.js"]
