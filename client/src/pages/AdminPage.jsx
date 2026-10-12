@@ -92,7 +92,7 @@ export function AdminBooksPage() {
                 <td className="py-2 text-right">
                   <button
                     onClick={() => setEditingTarget(book)}
-                    className="text-slate-850 hover:text-slate-900"
+                    className="text-slate-850 hover:text-slate-900 cursor-pointer"
                   >
                     Edit
                   </button>
