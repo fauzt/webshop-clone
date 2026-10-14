@@ -90,22 +90,22 @@ export function AdminBooksPage() {
         <table className="mt-6 w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-slate-700">
-              <th className="py-2 font-medium">Title</th>
-              <th className="py-2 font-medium">Author</th>
-              <th className="py-2 font-medium">Category</th>
-              <th className="py-2 font-medium">Price</th>
-              <th className="py-2 font-medium">Stock</th>
+              <th className="py-2 pr-2 font-medium">Title</th>
+              <th className="py-2 pr-2 font-medium">Author</th>
+              <th className="py-2 pr-2 font-medium">Category</th>
+              <th className="py-2 pr-2 font-medium">Price</th>
+              <th className="py-2 pr-2 font-medium">Stock</th>
               <th className="py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {books.map((book) => (
               <tr key={book.id} className="border-b border-slate-100">
-                <td className="py-2 text-slate-900">{book.title}</td>
-                <td className="py-2 text-slate-800">{book.author}</td>
-                <td className="py-2 text-slate-800">{book.category?.name || '—'}</td>
-                <td className="py-2 text-slate-800">${Number(book.price).toFixed(2)}</td>
-                <td className="py-2 text-slate-800 text-right">{book.stock}</td>
+                <td className="py-2 pr-2 text-slate-900">{book.title}</td>
+                <td className="py-2 pr-2 text-slate-800">{book.author}</td>
+                <td className="py-2 pr-2 text-slate-800">{book.category?.name || '—'}</td>
+                <td className="py-2 pr-2 text-slate-800">${Number(book.price).toFixed(2)}</td>
+                <td className="py-2 pr-2 text-slate-800 text-right">{book.stock}</td>
                 <td className="py-2 text-right">
                   <button
                     onClick={() => setEditingTarget(book)}
