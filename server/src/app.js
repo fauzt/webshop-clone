@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes.js';
 import bookRoutes from './routes/bookRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -31,6 +32,7 @@ app.use('/auth', authRoutes);
 app.use('/books', bookRoutes);
 app.use('/cart', cartRoutes);
 app.use('/orders', orderRoutes);
+app.use('/categories', categoryRoutes);
 
 // GET /me returns the logged-in user's identity from the access token.
 app.get('/me', requireAuth, (req, res) => {

@@ -64,6 +64,17 @@ export function resetMockOrdersState() {
   fakeOrders = [];
 }
 
+// A fake "categories table".
+export let fakeCategories = [];
+
+export function seedCategories(categories) {
+  fakeCategories = categories;
+}
+
+export function resetMockCategoriesState() {
+  fakeCategories = [];
+}
+
 export const handlers = [
   http.post(`${API_URL}/auth/register`, async ({ request }) => {
     const { email, password } = await request.json();
@@ -221,5 +232,54 @@ http.get(`${API_URL}/books`, ({ request }) => {
 
   http.get(`${API_URL}/orders`, () => {
       return HttpResponse.json({ orders: fakeOrders });
+  }),
+
+  http.get(`${API_URL}/categories`, () => {
+    return HttpResponse.json({ categories: fakeCategories });
+  }),
+
+  http.post(`${API_URL}/categories`, async ({ request }) => {
+    const { name } = await request.json();
+
+    if (!name) {
+      return HttpResponse.json({ error: 'Validation failed' }, { status: 400 });
+    }
+    if (fakeCategories.some((c) => c.name === name)) {
+      return HttpResponse.json(
+        { error: 'A category with this name already exists' },
+        { status: 409 }
+      );
+    }
+
+    const category = { id: randomUUID(), name };
+    fakeCategories = [...fakeCategories, category];
+    return HttpResponse.json({ category }, { status: 201 });
+  }),
+
+  http.put(`${API_URL}/categories/:id`, async ({ request, params }) => {
+    const { name } = await request.json();
+    const category = fakeCategories.find((c) => c.id === params.id);
+
+    if (!category) {
+      return HttpResponse.json({ error: 'Category not found' }, { status: 404 });
+    }
+    if (fakeCategories.some((c) => c.name === name && c.id !== params.id)) {
+      return HttpResponse.json(
+        { error: 'A category with this name already exists' },
+        { status: 409 }
+      );
+    }
+
+    category.name = name;
+    return HttpResponse.json({ category });
+  }),
+
+  http.delete(`${API_URL}/categories/:id`, ({ params }) => {
+    const existed = fakeCategories.some((c) => c.id === params.id);
+    if (!existed) {
+      return HttpResponse.json({ error: 'Category not found' }, { status: 404 });
+    }
+    fakeCategories = fakeCategories.filter((c) => c.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

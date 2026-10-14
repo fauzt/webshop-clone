@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listBooks, deleteBook } from '../api/books';
+import { listCategories } from '../api/categories';
 import { BookForm } from '../components/BookForm';
+import { CategoryManager } from '../components/CategoryManager';
 
 export function AdminBooksPage() {
   const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   // Controls the form: null means hidden, 'new' means creating, a book
@@ -19,9 +22,16 @@ export function AdminBooksPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const loadCategories = useCallback(() => {
+    listCategories()
+      .then((data) => setCategories(data.categories))
+      .catch(() => setError('Could not load categories.'));
+  }, []);
+
   useEffect(() => {
     loadBooks();
-  }, [loadBooks]);
+    loadCategories();
+  }, [loadBooks, loadCategories]);
 
   function handleSaved() {
     setEditingTarget(null);
@@ -61,11 +71,16 @@ export function AdminBooksPage() {
         <div className="mt-4">
           <BookForm
             book={editingTarget === 'new' ? null : editingTarget}
+            categories={categories}
             onSaved={handleSaved}
             onCancel={() => setEditingTarget(null)}
           />
         </div>
       )}
+
+      <div className="mt-6">
+        <CategoryManager categories={categories} onChanged={loadCategories} />
+      </div>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
@@ -75,20 +90,22 @@ export function AdminBooksPage() {
         <table className="mt-6 w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-slate-700">
-              <th className="py-2 font-medium">Title</th>
-              <th className="py-2 font-medium">Author</th>
-              <th className="py-2 font-medium">Price</th>
-              <th className="py-2 font-medium">Stock</th>
+              <th className="py-2 pr-2 font-medium">Title</th>
+              <th className="py-2 pr-2 font-medium">Author</th>
+              <th className="py-2 pr-2 font-medium">Category</th>
+              <th className="py-2 pr-2 font-medium">Price</th>
+              <th className="py-2 pr-2 font-medium">Stock</th>
               <th className="py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {books.map((book) => (
               <tr key={book.id} className="border-b border-slate-100">
-                <td className="py-2 text-slate-900">{book.title}</td>
-                <td className="py-2 text-slate-800">{book.author}</td>
-                <td className="py-2 text-slate-800">${Number(book.price).toFixed(2)}</td>
-                <td className="py-2 text-slate-800 text-right">{book.stock}</td>
+                <td className="py-2 pr-2 text-slate-900">{book.title}</td>
+                <td className="py-2 pr-2 text-slate-800">{book.author}</td>
+                <td className="py-2 pr-2 text-slate-800">{book.category?.name || '—'}</td>
+                <td className="py-2 pr-2 text-slate-800">${Number(book.price).toFixed(2)}</td>
+                <td className="py-2 pr-2 text-slate-800 text-right">{book.stock}</td>
                 <td className="py-2 text-right">
                   <button
                     onClick={() => setEditingTarget(book)}
