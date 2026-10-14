@@ -8,9 +8,10 @@ const emptyForm = {
   price: '',
   stock: '',
   coverImage: '',
+  categoryId: '',
 };
 
-export function BookForm({ book, onSaved, onCancel }) {
+export function BookForm({ book, categories = [], onSaved, onCancel }) {
   const isEditing = Boolean(book);
   const [values, setValues] = useState(
     book
@@ -21,6 +22,7 @@ export function BookForm({ book, onSaved, onCancel }) {
           price: book.price,
           stock: book.stock,
           coverImage: book.coverImage || '',
+          categoryId: book.categoryId || '',
         }
       : emptyForm
   );
@@ -46,6 +48,7 @@ export function BookForm({ book, onSaved, onCancel }) {
       stock: Number(values.stock),
       ...(values.description ? { description: values.description } : {}),
       ...(values.coverImage ? { coverImage: values.coverImage } : {}),
+      ...(values.categoryId ? { categoryId: values.categoryId } : {}),
     };
 
     try {
@@ -108,6 +111,21 @@ export function BookForm({ book, onSaved, onCancel }) {
             onChange={handleChange('stock')}
             className="mt-1 w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
           />
+        </div>
+        <div>
+          <label className="block text-sm text-slate-800">Category (optional)</label>
+          <select
+            value={values.categoryId}
+            onChange={handleChange('categoryId')}
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">No category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="col-span-2">
           <label className="block text-sm text-slate-800">Cover image URL (optional)</label>
