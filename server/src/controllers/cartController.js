@@ -35,7 +35,7 @@ const addToCart = asyncHandler(async (req, res) => {
     err.status = 404;
     throw err;
   }
-  if (book.quantity <= 0 || book.quantity < quantity) {
+  if (book.stock <= 0 || book.stock < quantity) {
     const err = new Error('No stock left for book');
     err.status = 422;
     throw err;
