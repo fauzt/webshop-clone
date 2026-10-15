@@ -1,6 +1,8 @@
+import logger from '../config/logger.js';
+
 //eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  console.error(err); // eslint-disable-line no-console
+  logger.error(err.message, { stack: err.stack });
 
   if (err.name === 'ZodError') {
     return res.status(400).json({ error: 'Validation failed', details: err.errors });

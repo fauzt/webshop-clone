@@ -11,10 +11,18 @@ import orderRoutes from './routes/orderRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
 import errorHandler from './middleware/errorHandler.js';
+import logger from './config/logger.js';
 
 const app = express();
 
-app.use(morgan('dev'));
+// Pipe morgan's access log lines through winston instead of to
+// stdout, so request logs and application logs share the same format
+// (JSON in production).
+app.use(
+  morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+    stream: { write: (message) => logger.http(message.trim()) },
+  })
+);
 
 app.use(
   cors({
