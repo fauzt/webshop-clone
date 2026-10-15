@@ -15,7 +15,7 @@ import logger from './config/logger.js';
 
 const app = express();
 
-// Pipe morgan's access log lines through winston instead of straight to
+// Pipe morgan's access log lines through winston instead of to
 // stdout, so request logs and application logs share the same format
 // (JSON in production).
 app.use(

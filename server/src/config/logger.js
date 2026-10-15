@@ -3,8 +3,9 @@ import winston from 'winston';
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Set transport to Console for 'podman logs'.
-// Production gets structured JSON (for future log aggregation); dev gets
-// a colorized one-liner. 'http' is included in both so morgan's
+// Production gets structured JSON (for future log aggregation);
+// dev gets a colorized one-liner.
+// 'http' level is included in both so morgan's
 // request-logging stream (below) still shows up.
 const logger = winston.createLogger({
   level: isProduction ? 'http' : 'debug',
