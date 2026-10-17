@@ -47,6 +47,12 @@ export function AuthProvider({ children }) {
     setUser(data.user);
   }
 
+  async function loginWithGoogle(idToken) {
+    const { data } = await api.post('/auth/google', { idToken });
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+  }
+
   async function logout() {
     await api.post('/auth/logout');
     setAccessToken(null);
@@ -54,7 +60,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, register, login, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

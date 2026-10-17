@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../src/context/AuthContext.jsx';
 import { LoginPage } from '../src/pages/LoginPage.jsx';
-import { fakeUsers } from './mocks/handlers.js';
+import { fakeUsers, googleAuthState } from './mocks/handlers.js';
 
 // Renders LoginPage inside a real router with a fake "/" destination, so
 // tests can assert on navigation the same way a user would experience it —
@@ -83,5 +83,60 @@ describe('LoginPage', () => {
     // state (text changes to "Logging in…" and becomes disabled) before
     // navigation resolves.
     expect(screen.getByRole('button', { name: 'Logging in…' })).toBeDisabled();
+  });
+});
+
+describe('LoginPage — Google sign-in', () => {
+  let capturedCallback;
+
+  beforeEach(() => {
+    capturedCallback = null;
+    // Stubs the GIS script's global API, since it isn't actually loaded
+    // in jsdom. initialize() stashes its callback here so a test can
+    // invoke it directly, simulating GIS firing it after a real sign-in.
+    window.google = {
+      accounts: {
+        id: {
+          initialize: vi.fn(({ callback }) => {
+            capturedCallback = callback;
+          }),
+          renderButton: vi.fn(),
+        },
+      },
+    };
+  });
+
+  afterEach(() => {
+    delete window.google;
+  });
+
+  it('navigates to / after a successful Google sign-in', async () => {
+    renderLoginPage();
+    await waitFor(() => expect(window.google.accounts.id.initialize).toHaveBeenCalled());
+
+    await act(async () => capturedCallback({ credential: 'fake-id-token' }));
+
+    await waitFor(() => expect(screen.getByText('home page')).toBeInTheDocument());
+  });
+
+  it('shows the server error and stays on the page when the Google email is unverified', async () => {
+    googleAuthState.decodedPayload = { sub: 'x', email: 'y@example.com', email_verified: false };
+    renderLoginPage();
+    await waitFor(() => expect(window.google.accounts.id.initialize).toHaveBeenCalled());
+
+    await act(async () => capturedCallback({ credential: 'fake-id-token' }));
+
+    expect(await screen.findByText('Google account email is not verified')).toBeInTheDocument();
+    expect(screen.queryByText('home page')).not.toBeInTheDocument();
+  });
+
+  it('shows the backend error message when the token is malformed (mock 500 path)', async () => {
+    googleAuthState.decodedPayload = null;
+    renderLoginPage();
+    await waitFor(() => expect(window.google.accounts.id.initialize).toHaveBeenCalled());
+
+    await act(async () => capturedCallback({ credential: 'garbage' }));
+
+    expect(await screen.findByText('Internal server error')).toBeInTheDocument();
   });
 });

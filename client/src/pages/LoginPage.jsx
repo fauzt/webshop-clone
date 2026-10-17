@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { GoogleSignInButton } from '../components/GoogleSignInButton.jsx';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,6 +20,19 @@ export function LoginPage() {
       navigate('/');
     } catch (err) {
       // vague enough error message for email login to obscure details
+      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleCredential(idToken) {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await loginWithGoogle(idToken);
+      navigate('/');
+    } catch (err) {
       setError(err.response?.data?.error || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -58,8 +72,6 @@ export function LoginPage() {
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
         <button
           type="submit"
           disabled={isSubmitting}
@@ -68,6 +80,12 @@ export function LoginPage() {
           {isSubmitting ? 'Logging in…' : 'Log in'}
         </button>
       </form>
+
+      <div className="mt-4">
+        <GoogleSignInButton onCredential={handleGoogleCredential} />
+      </div>
+
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
       <p className="mt-4 text-sm text-slate-900">
         Don't have an account?{' '}

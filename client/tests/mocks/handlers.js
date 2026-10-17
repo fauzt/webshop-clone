@@ -11,10 +11,24 @@ export const fakeUsers = new Map();
 // "no session" without needing real cookies in jsdom.
 export const sessionState = { hasValidRefreshToken: false, currentUser: null };
 
+// Lets tests control what the mock "Google" backend decoded from the
+// idToken, without needing a real Google token. Setting decodedPayload to
+// null simulates verifyIdToken() throwing on a garbage token, mirroring
+// the real backend's uncaught-exception -> 500 path (see googleLogin in
+// authController.js).
+export const googleAuthState = {
+  decodedPayload: { sub: 'google-sub-1', email: 'googleuser@example.com', email_verified: true },
+};
+
 export function resetMockAuthState() {
   fakeUsers.clear();
   sessionState.hasValidRefreshToken = false;
   sessionState.currentUser = null;
+  googleAuthState.decodedPayload = {
+    sub: 'google-sub-1',
+    email: 'googleuser@example.com',
+    email_verified: true,
+  };
 }
 
 // A fake "books table" — an array (not a Map) since tests need to seed
@@ -115,6 +129,34 @@ export const handlers = [
     sessionState.currentUser = user;
 
     return HttpResponse.json({ accessToken: 'fake-access-token', user });
+  }),
+
+  http.post(`${API_URL}/auth/google`, async ({ request }) => {
+    const { idToken } = await request.json();
+    if (!idToken) {
+      return HttpResponse.json({ error: 'Validation failed' }, { status: 400 });
+    }
+
+    if (!googleAuthState.decodedPayload) {
+      return HttpResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+
+    const payload = googleAuthState.decodedPayload;
+    if (!payload.email_verified) {
+      return HttpResponse.json({ error: 'Google account email is not verified' }, { status: 401 });
+    }
+
+    let stored = fakeUsers.get(payload.email);
+    if (!stored) {
+      stored = { id: randomUUID(), email: payload.email, role: 'USER', googleId: payload.sub };
+      fakeUsers.set(payload.email, stored);
+    }
+
+    const user = { id: stored.id, email: stored.email, role: stored.role };
+    sessionState.hasValidRefreshToken = true;
+    sessionState.currentUser = user;
+
+    return HttpResponse.json({ accessToken: 'fake-google-access-token', user });
   }),
 
   http.post(`${API_URL}/auth/refresh`, () => {
