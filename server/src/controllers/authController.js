@@ -1,6 +1,7 @@
 import { hash, compare } from 'bcrypt';
 import prisma from '../config/db.ts';
-import { registerSchema, loginSchema } from '../utils/validation.js';
+import googleClient from '../config/googleAuth.js';
+import { registerSchema, loginSchema, googleAuthSchema } from '../utils/validation.js';
 import {
   signAccessToken,
   generateRefreshToken,
@@ -65,14 +66,46 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = loginSchema.parse(req.body);
 
   const user = await prisma.user.findUnique({ where: { email } });
-  // Deliberately vague error; don't reveal whether the email exists.
-  if (!user) {
+  // Deliberately vague error; don't reveal whether the email exists, or
+  // whether it exists but has no password (OAuth-linked account).
+  if (!user || !user.passwordHash) {
     return res.status(401).json({ error: LOGIN_ERROR_MESSAGE });
   }
 
   const valid = await compare(password, user.passwordHash);
   if (!valid) {
     return res.status(401).json({ error: LOGIN_ERROR_MESSAGE });
+  }
+
+  await issueTokensAndRespond(res, user);
+});
+
+const googleLogin = asyncHandler(async (req, res) => {
+  const { idToken } = googleAuthSchema.parse(req.body);
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+  const payload = ticket.getPayload();
+
+  if (!payload.email_verified) {
+    return res.status(401).json({ error: 'Google account email is not verified' });
+  }
+
+  let user = await prisma.user.findUnique({ where: { email: payload.email } });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: { email: payload.email, googleId: payload.sub },
+    });
+  } else if (!user.googleId) {
+    // first time sign-in for existing password-based account;
+    // opt to link this Google identity to account.
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { googleId: payload.sub },
+    });
   }
 
   await issueTokensAndRespond(res, user);
@@ -113,4 +146,4 @@ const logout = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
-export { register, login, refresh, logout };
+export { register, login, googleLogin, refresh, logout };
