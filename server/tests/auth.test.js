@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../src/app.js';
 import { REFRESH_TOKEN_TTL_DAYS } from '../src/utils/tokens';
+import prisma from '../src/config/db.js';
 
 const validUser = { email: 'reader@example.com', password: 'correcthorse123' };
 
@@ -138,6 +139,41 @@ describe('POST /auth/logout', () => {
 
     const refreshRes = await request(app).post('/auth/refresh').set('Cookie', cookie);
     expect(refreshRes.status).toBe(401);
+  });
+});
+
+const testGoogleIdTokenPayload = {
+  sub: '1234567890',
+  email: 'reader@example.com',
+  email_verified: true,
+  given_name: 'Test',
+  family_name: 'User',
+  name: 'Test User',
+}
+
+vi.mock('google-auth-library', () => {
+  const mOAuth2Client = {
+    verifyIdToken: vi.fn().mockResolvedValue({
+      getPayload: () => (testGoogleIdTokenPayload),
+    }),
+  };
+  return {
+    OAuth2Client: vi.fn(() => mOAuth2Client),
+  };
+});
+
+describe('POST /auth/google', () => {
+  it('creates a new user on a successful fresh sign-in with OAuth', async () => {
+    const idToken = 'fake-id-token';
+    const oAuthRes = await request(app).post('/auth/google').send({ idToken });
+    expect(oAuthRes.status).toBe(200);
+    expect(oAuthRes.body.accessToken).toEqual(expect.any(String));
+    expect(oAuthRes.body.user).toMatchObject({ email: validUser.email, role: 'USER' });
+
+    const newUser = await prisma.user.findUnique({ where: { email: validUser.email } });
+    expect(newUser).not.toBeNull();
+    expect(newUser.googleId).toBe(testGoogleIdTokenPayload.sub)
+    expect(newUser.passwordHash).toBeNull();
   });
 });
 
