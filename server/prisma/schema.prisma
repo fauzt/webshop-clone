@@ -20,7 +20,13 @@ enum Role {
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
-  passwordHash String
+  // Null for an account created via Google sign-in that has never also
+  // registered with a password.
+  passwordHash String?
+  // Google's stable per-account "sub" claim. Set the first time a user
+  // authenticates with Google, whether that creates a new account or
+  // links to an existing password-based one with the same email.
+  googleId     String?  @unique
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
