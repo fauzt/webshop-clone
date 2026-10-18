@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../src/app.js';
 import { REFRESH_TOKEN_TTL_DAYS } from '../src/utils/tokens';
 import prisma from '../src/config/db.js';
+import { OAuth2Client } from 'google-auth-library';
 
 const validUser = { email: 'reader@example.com', password: 'correcthorse123' };
 
@@ -158,11 +159,16 @@ vi.mock('google-auth-library', () => {
     }),
   };
   return {
-    OAuth2Client: vi.fn(() => mOAuth2Client),
+    OAuth2Client: vi.fn(function () {
+      return mOAuth2Client;
+    }),
   };
 });
 
 describe('POST /auth/google', () => {
+  // for overriding override its resolved value.
+  const googleClientMock = new OAuth2Client();
+
   it('creates a new user on a successful fresh sign-in with OAuth', async () => {
     const idToken = 'fake-id-token';
     const oAuthRes = await request(app).post('/auth/google').send({ idToken });
@@ -174,6 +180,48 @@ describe('POST /auth/google', () => {
     expect(newUser).not.toBeNull();
     expect(newUser.googleId).toBe(testGoogleIdTokenPayload.sub)
     expect(newUser.passwordHash).toBeNull();
+  });
+
+  it('links an existing password account to Google on first OAuth sign-in, without creating a duplicate', async () => {
+    const registerRes = await request(app).post('/auth/register').send(validUser);
+    const existingUserId = registerRes.body.user.id;
+
+    const oAuthRes = await request(app).post('/auth/google').send({ idToken: 'fake-id-token' });
+
+    expect(oAuthRes.status).toBe(200);
+    expect(oAuthRes.body.user.id).toBe(existingUserId);
+
+    const linkedUser = await prisma.user.findUnique({ where: { email: validUser.email } });
+    expect(linkedUser.id).toBe(existingUserId);
+    expect(linkedUser.googleId).toBe(testGoogleIdTokenPayload.sub);
+    // The original password must survive linking.
+    expect(linkedUser.passwordHash).not.toBeNull();
+
+    const allMatchingUsers = await prisma.user.findMany({ where: { email: validUser.email } });
+    expect(allMatchingUsers).toHaveLength(1);
+  });
+
+  it('logs into the same user on a repeat sign-in, without creating a duplicate', async () => {
+    const firstRes = await request(app).post('/auth/google').send({ idToken: 'fake-id-token' });
+    const secondRes = await request(app).post('/auth/google').send({ idToken: 'fake-id-token' });
+
+    expect(secondRes.status).toBe(200);
+    expect(secondRes.body.user.id).toBe(firstRes.body.user.id);
+
+    const allMatchingUsers = await prisma.user.findMany({ where: { email: validUser.email } });
+    expect(allMatchingUsers).toHaveLength(1);
+  });
+
+  it('rejects an unverified Google email with 401, without creating a user', async () => {
+    googleClientMock.verifyIdToken.mockResolvedValueOnce({
+      getPayload: () => ({ ...testGoogleIdTokenPayload, email_verified: false }),
+    });
+
+    const oAuthRes = await request(app).post('/auth/google').send({ idToken: 'fake-id-token' });
+
+    expect(oAuthRes.status).toBe(401);
+    const user = await prisma.user.findUnique({ where: { email: validUser.email } });
+    expect(user).toBeNull();
   });
 });
 
