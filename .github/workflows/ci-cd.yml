@@ -3,8 +3,28 @@ name: CI Tests
 on:
   push:
     branches: [main]
+    paths:
+      - 'client/src/**'
+      - 'client/package.json'
+      - 'client/package-lock.json'
+      - 'client/Dockerfile'
+      - 'server/src/**'
+      - 'server/package.json'
+      - 'server/package-lock.json'
+      - 'server/Dockerfile'
+      - 'server/prisma/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'client/src/**'
+      - 'client/package.json'
+      - 'client/package-lock.json'
+      - 'client/Dockerfile'
+      - 'server/src/**'
+      - 'server/package.json'
+      - 'server/package-lock.json'
+      - 'server/Dockerfile'
+      - 'server/prisma/**'
 
 jobs:
   test-server:
